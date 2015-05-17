@@ -1,7 +1,4 @@
 # flowmeter
-Flowmeter TI board/MQTT demo
+TI CC3200 Launchpad Flowmeter
 
-This demo requires a TI CC3200 and Energia, and was designed to accept 
-input from Swissflow 800 flowmeters.  Interrupts are bound to the two 
-pushbuttons and their respective header pins, allowing the demo to be 
-run without flowmeters available if necessary.
+This is program is meant to be run on a TI CC3200 Launchpad, accepting up to ten GPIO flowmeter inputs from Swissflow SF800 flowmeters to monitor the flow (in ounces) of beer, of course.
