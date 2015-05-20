@@ -1,4 +1,5 @@
-#define TICKS_PER_OZ 1000
+#define TI_BOARD_NUMBER 0
+#define TICKS_PER_OZ 10
 
 #include <SPI.h>
 #include <WiFi.h>
@@ -10,15 +11,11 @@
 WiFiCredentials credentials;
 WifiIPStack ipstack;
 MQTT::Client<WifiIPStack, Countdown> client = MQTT::Client<WifiIPStack, Countdown>(ipstack);
-MQTT:Message message;
-message.qos = MQTT::QOS0;
-message.retained = false;
-message.dup = false;
 
-const char* topic = "public/flowmeter/test";
+const char* topic = "public/flowmeter/ounce";
 char printbuf[100];
 char mqttbuf[100];
-int meter_count[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+volatile int meter_count[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 void blinkGreen(int times) {
   for(int i = 0; i < times; i++) {
@@ -64,7 +61,7 @@ void connect() {
     Serial.print(printbuf);
   }
 
-  Serial.println("MQTT connecting");
+  Serial.println("MQTT connecting...");
   MQTTPacket_connectData data = MQTTPacket_connectData_initializer;
   data.MQTTVersion = 3;
   data.clientID.cstring = (char*)"flowmeter";
@@ -73,86 +70,73 @@ void connect() {
     sprintf(printbuf, "rc from MQTT connect is %d\n", rc);
     Serial.print(printbuf);
   }
-  Serial.println("MQTT connected");
+  Serial.println("MQTT connection complete.");
 }
 
-void meter_one() {
-  meter_count[1]++;
-
-  digitalWrite(RED_LED, HIGH);
-  delay(50);
-  digitalWrite(RED_LED, LOW);
-
-  if(meter_count[1] > last_count_one + PUBLISH_THRESHOLD){
-    sendMessage(1, "public/flowmeter/meter-1");
-    last_count_one = meter_count[1];
-  }
-}
-
-void check_meter(int meter) {
+void checkMeter(int meter) {
+  Serial.println("Input received.");
   // Blink the red LED to give some feedback
   blinkRed();
   if(meter_count[meter] >= TICKS_PER_OZ) {
     meter_count[meter] = 0;
-    sendMessage(meter, )
+    sendMessage(meter);
   }
 }
 
 void meter0() {
   meter_count[0]++;
-  blinkRed();
   checkMeter(0);
 }
 void meter1() {
   meter_count[1]++;
-  blinkRed();
   checkMeter(1);
 }
 void meter2() {
   meter_count[2]++;
-  blinkRed();
   checkMeter(2);
 }
 void meter3() {
   meter_count[3]++;
-  blinkRed();
   checkMeter(3);
 }
 void meter4() {
   meter_count[4]++;
-  blinkRed();
   checkMeter(4);
 }
 void meter5() {
   meter_count[5]++;
-  blinkRed();
   checkMeter(5);
 }
 void meter6() {
   meter_count[6]++;
-  blinkRed();
   checkMeter(6);
 }
 void meter7() {
   meter_count[7]++;
-  blinkRed();
   checkMeter(7);
 }
 void meter8() {
   meter_count[8]++;
-  blinkRed();
   checkMeter(8);
 }
 void meter9() {
   meter_count[9]++;
-  blinkRed();
   checkMeter(9);
+}
+void meterTest() {
+  meter_count[10]++;
+  checkMeter(10);
 }
 
 void sendMessage(int meter) {
   Serial.println("Sending MQTT Message...");
 
-  sprintf(mqttbuf, "{'meter': %d}", meter);
+  MQTT::Message message;
+  message.qos = MQTT::QOS0;
+  message.retained = false;
+  message.dup = false;
+
+  sprintf(mqttbuf, "{'board': %d, 'meter': %d}", TI_BOARD_NUMBER, meter);
   message.payload = (void*)mqttbuf;
   message.payloadlen = strlen(mqttbuf);
   client.publish(topic, message);
@@ -161,45 +145,66 @@ void sendMessage(int meter) {
 }
 
 void pinSetup() {
+  Serial.println("Setting up pins...");
+
   // GPIO_00
-  pinMode(PIN_50, INPUT_PULLUP);
-  attachInterrupt(PIN_50, meter0, RISING);
+  // pinMode(PIN_50, INPUT_PULLUP);
+  // attachInterrupt(PIN_50, meter0, RISING);
+  // Serial.println("50");
 
   // GPIO_01
-  pinMode(PIN_55, INPUT_PULLUP);
-  attachInterrupt(PIN_55, meter1, RISING);
+  // pinMode(PIN_55, INPUT_PULLUP);
+  // attachInterrupt(PIN_55, meter1, RISING);
+  // Serial.println("55");
 
   // GPIO_02
-  pinMode(PIN_57, INPUT_PULLUP);
-  attachInterrupt(PIN_57, meter2, RISING);
+  // pinMode(PIN_57, INPUT_PULLUP);
+  // attachInterrupt(PIN_57, meter2, RISING);
+  // Serial.println("57");
 
   // GPIO_03
-  pinMode(PIN_58, INPUT_PULLUP);
-  attachInterrupt(PIN_58, meter3, RISING);
+  // pinMode(PIN_58, INPUT_PULLUP);
+  // attachInterrupt(PIN_58, meter3, RISING);
+  // Serial.println("58");
 
   // GPIO_04
-  pinMode(PIN_59, INPUT_PULLUP);
-  attachInterrupt(PIN_59, meter4, RISING);
+  // pinMode(PIN_59, INPUT_PULLUP);
+  // attachInterrupt(PIN_59, meter4, RISING);
+  // Serial.println("59");
+
+  // Pushbutton
+  pinMode(PIN_04, INPUT_PULLUP);
+  attachInterrupt(PIN_04, meterTest, RISING);
+  Serial.println("04");
 
   // GPIO_05
   pinMode(PIN_60, INPUT_PULLUP);
   attachInterrupt(PIN_60, meter5, RISING);
+  Serial.println("60");
 
   // GPIO_06
   pinMode(PIN_61, INPUT_PULLUP);
   attachInterrupt(PIN_61, meter6, RISING);
+  Serial.println("61");
 
   // GPIO_07
   pinMode(PIN_62, INPUT_PULLUP);
   attachInterrupt(PIN_62, meter7, RISING);
+  Serial.println("62");
 
   // GPIO_08
-  pinMode(PIN_63, INPUT_PULLUP);
-  attachInterrupt(PIN_63, meter8, RISING);
+  // pinMode(PIN_63, INPUT_PULLUP);
+  // attachInterrupt(PIN_63, meter8, RISING);
+  // Serial.println("63");
 
   // GPIO_09
   pinMode(PIN_64, INPUT_PULLUP);
   attachInterrupt(PIN_64, meter9, RISING);
+  Serial.println("64");
+
+
+
+  Serial.println("Pin setup complete.");
 }
 
 void initWifi() {
