@@ -1,18 +1,21 @@
 #define TI_BOARD_NUMBER 0
-#define TICKS_PER_OZ 10
+#define TICKS_PER_OZ 170
 
 #include <SPI.h>
 #include <WiFi.h>
 #include <WifiIPStack.h>
 #include <Countdown.h>
 #include <MQTTClient.h>
-#include <WiFiCredentials.h>
+// #include <WiFiCredentials.h>
 
-WiFiCredentials credentials;
+// WiFiCredentials credentials;
+#define WIFI_SSID "SWB"
+#define WIFI_PASSWORD "370samples"
+
 WifiIPStack ipstack;
 MQTT::Client<WifiIPStack, Countdown> client = MQTT::Client<WifiIPStack, Countdown>(ipstack);
 
-const char* topic = "public/flowmeter/ounce";
+const char* topic = "ceyjppuqf51jmon/flowmeter/ounce";
 char printbuf[100];
 char mqttbuf[100];
 volatile int meter_count[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -65,6 +68,8 @@ void connect() {
   MQTTPacket_connectData data = MQTTPacket_connectData_initializer;
   data.MQTTVersion = 3;
   data.clientID.cstring = (char*)"flowmeter";
+  data.username.cstring = (char*)"8a857b0b-6307-4dc9-ac50-d0895f92f976";
+  data.password.cstring = (char*)"80de655641d43752cf26161a9cfb075e";
   rc = client.connect(data);
   if (rc != 0) {
     sprintf(printbuf, "rc from MQTT connect is %d\n", rc);
@@ -74,7 +79,6 @@ void connect() {
 }
 
 void checkMeter(int meter) {
-  Serial.println("Input received.");
   // Blink the red LED to give some feedback
   blinkRed();
   if(meter_count[meter] >= TICKS_PER_OZ) {
@@ -90,42 +94,6 @@ void meter0() {
 void meter1() {
   meter_count[1]++;
   checkMeter(1);
-}
-void meter2() {
-  meter_count[2]++;
-  checkMeter(2);
-}
-void meter3() {
-  meter_count[3]++;
-  checkMeter(3);
-}
-void meter4() {
-  meter_count[4]++;
-  checkMeter(4);
-}
-void meter5() {
-  meter_count[5]++;
-  checkMeter(5);
-}
-void meter6() {
-  meter_count[6]++;
-  checkMeter(6);
-}
-void meter7() {
-  meter_count[7]++;
-  checkMeter(7);
-}
-void meter8() {
-  meter_count[8]++;
-  checkMeter(8);
-}
-void meter9() {
-  meter_count[9]++;
-  checkMeter(9);
-}
-void meterTest() {
-  meter_count[10]++;
-  checkMeter(10);
 }
 
 void sendMessage(int meter) {
@@ -147,62 +115,15 @@ void sendMessage(int meter) {
 void pinSetup() {
   Serial.println("Setting up pins...");
 
-  // GPIO_00
-  // pinMode(PIN_50, INPUT_PULLUP);
-  // attachInterrupt(PIN_50, meter0, RISING);
-  // Serial.println("50");
+  // Button 1
+  pinMode(PUSH1, INPUT_PULLUP);
+  attachInterrupt(PUSH1, meter0, RISING);
+  Serial.println("PUSH1 interrupt created.");
 
-  // GPIO_01
-  // pinMode(PIN_55, INPUT_PULLUP);
-  // attachInterrupt(PIN_55, meter1, RISING);
-  // Serial.println("55");
-
-  // GPIO_02
-  // pinMode(PIN_57, INPUT_PULLUP);
-  // attachInterrupt(PIN_57, meter2, RISING);
-  // Serial.println("57");
-
-  // GPIO_03
-  // pinMode(PIN_58, INPUT_PULLUP);
-  // attachInterrupt(PIN_58, meter3, RISING);
-  // Serial.println("58");
-
-  // GPIO_04
-  // pinMode(PIN_59, INPUT_PULLUP);
-  // attachInterrupt(PIN_59, meter4, RISING);
-  // Serial.println("59");
-
-  // Pushbutton
-  pinMode(PIN_04, INPUT_PULLUP);
-  attachInterrupt(PIN_04, meterTest, RISING);
-  Serial.println("04");
-
-  // GPIO_05
-  pinMode(PIN_60, INPUT_PULLUP);
-  attachInterrupt(PIN_60, meter5, RISING);
-  Serial.println("60");
-
-  // GPIO_06
-  pinMode(PIN_61, INPUT_PULLUP);
-  attachInterrupt(PIN_61, meter6, RISING);
-  Serial.println("61");
-
-  // GPIO_07
-  pinMode(PIN_62, INPUT_PULLUP);
-  attachInterrupt(PIN_62, meter7, RISING);
-  Serial.println("62");
-
-  // GPIO_08
-  // pinMode(PIN_63, INPUT_PULLUP);
-  // attachInterrupt(PIN_63, meter8, RISING);
-  // Serial.println("63");
-
-  // GPIO_09
-  pinMode(PIN_64, INPUT_PULLUP);
-  attachInterrupt(PIN_64, meter9, RISING);
-  Serial.println("64");
-
-
+  // Button 2
+  pinMode(PUSH2, INPUT_PULLUP);
+  attachInterrupt(PUSH2, meter1, RISING);
+  Serial.println("PUSH2 interrupt created.");
 
   Serial.println("Pin setup complete.");
 }
@@ -212,9 +133,9 @@ void initWifi() {
   Serial.print("Attempting to connect to Network named: ");
 
   // print the network name (SSID);
-  Serial.println(credentials.get_ssid());
+  Serial.println(WIFI_SSID);
 
-  WiFi.begin(credentials.get_ssid(), credentials.get_password());
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   int loops = 0;
   while ( WiFi.status() != WL_CONNECTED && loops < 30) {
